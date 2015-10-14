@@ -1,52 +1,38 @@
-/*----------------------------------------------------------------------
-   First shalt thou take out the Holy Pin. Then...
-------------------------------------------------------------------------
+/**
+*  First shalt thou take out the Holy Pin. Then...
+*  @author Ulrik Moe, Christian Blach, Joakim Sindholt
+*  @license GPLv3
+*
+*  Indentation: 3 spaces
+*  Conventions: https://github.com/airbnb/javascript
+*
+*  Ugly fixes:
+*  1) Nets needs to be the first acquirer in acquirersort. The problem is that
+*     we don't iterate through acquirers properly when we try to find the
+*     cheapest combination of acquirers.
+*
+*  To do:
+*  1) loadurl: add backward compatibility.
+*
+*
+ **/
 
-   1) Write some f@#king Comments!!!
-   2) Fix tab indentation (3 spaces).
+// Constants
+var table = $('table');
 
-------------------------------------------------------------------------
-   The holy grail of JavaScript...
-------------------------------------------------------------------------
-
-   Indentation: 3 spaces
-
-   GLOBAL_CONSTANTS: UPPERCASE
-   GlobalVariables: PascalCase
-   localVariables: camelCase
-   funtionNaming: camelCase
-
-   Use JSHint or I will fart in your general direction! Your mother
-   was a hampster, and your father smelt of eldeberries!
-
------------------------------------------------------------------------*/
-
-
-// Valutakurser opdateret d. 08/10/2014
-var currency_value = {
-  'DKK': 1,
-  'SEK': 0.798,
-  'NOK': 0.876,
-  'EUR': 7.443,
-  'USD': 6.647
-};
-
-var currency_map = {
-  'DKK': 'kr',
-  'SEK': 'kr',
-  'NOK': 'kr',
-  'EUR': '\u20AC',
-  'USD': '$'
-};
-
+// Global variables
+var i, k, l, sort;
+var stopwatch;
 var gccode = 'DKK';
 
-function set_ccode(c) {
-    if (currency_map.hasOwnProperty(c)) { gccode = c; }
-}
+// Functions
+function $(s) { return document.getElementById(s); }
+function C(s) { return document.getElementsByClassName(s); }
 
-function get_ccode(){
-    return gccode;
+function set_ccode(c) {
+   if (currency_map.hasOwnProperty(c)) {
+      gccode = c;
+   }
 }
 
 function Currency(amt, code) {
@@ -56,918 +42,173 @@ function Currency(amt, code) {
 
 Currency.prototype.type = "currency";
 
-Currency.prototype.print = function () {
-  var number = Math.round((this.dkk() * 100) / currency_value[gccode]) / 100;
-  var parts = number.toString().split(".");
-  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  if (parts.length == 2 && parts[1].length == 1) {
-    parts[1] += "0";
-  }
-  return parts.join(",") + " " + currency_map[gccode];
+Currency.prototype.print = function() {
+   var number = Math.round((this.dkk() * 100) / currency_value[gccode]) / 100;
+   var parts = number.toString().split(".");
+   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+   if (parts.length == 2 && parts[1].length == 1) {
+      parts[1] += "0";
+   }
+   return parts.join(",") + " " + currency_map[gccode];
 };
 
-Currency.prototype.represent = function () {
-  if (this.length() === 1) {
-    for (var code in this.amounts) {
-      //if (currency_map.hasOwnProperty(code)) {
-    //    return this.amounts[code] + ' ' + currency_map[code];
-      //}
-      return this.amounts[code] + ' ' + code;
-    }
-  }
-  return this.dkk() / currency_value[gccode] + ' ' + gccode;//currency_map[gccode];
-};
-
-Currency.prototype.length = function () {
-  var k, n = 0;
-  for (k in this.amounts) {
-    if (this.amounts.hasOwnProperty(k)) { n++; }
-  }
-  return n;
-};
-
-Currency.prototype.dkk = function () {
-  var sum = 0;
-  for (var code in this.amounts) {
-    if (this.amounts.hasOwnProperty(code) &&
-      currency_value.hasOwnProperty(code)) {
-      sum += currency_value[code] * this.amounts[code];
-    }
-  }
-  return sum;
-};
-
-Currency.prototype.add = function (rhs) {
-  var n = new Currency(0, 'DKK');
-  var code;
-
-  for (code in this.amounts) {
-    if (this.amounts.hasOwnProperty(code)) {
-      n.amounts[code] = this.amounts[code];
-    }
-  }
-
-  for (code in rhs.amounts) {
-    if (rhs.amounts.hasOwnProperty(code)) {
-      if (!n.amounts.hasOwnProperty(code)) {
-        n.amounts[code] = 0;
+Currency.prototype.represent = function() {
+   if (this.length() === 1) {
+      for (var code in this.amounts) {
+         //if (currency_map.hasOwnProperty(code)) {
+         //    return this.amounts[code] + ' ' + currency_map[code];
+         //}
+         return this.amounts[code] + ' ' + code;
       }
-      n.amounts[code] += rhs.amounts[code];
-    }
-  }
-  return n;
+   }
+   return this.dkk() / currency_value[gccode] + ' ' + gccode; //currency_map[gccode];
 };
 
-Currency.prototype.is_equal_to = function (other_currency_object) {
-  for (var code in this.amounts) {
-    if (this.amounts.hasOwnProperty(code)) {
-      if (this.amounts[code] !== other_currency_object.amounts[code]) {
-        return false;
+Currency.prototype.string = function() {
+   if (this.length() === 1) {
+      for (var code in this.amounts) {
+         return this.amounts[code] + code;
       }
-    }
-  }
-  return true;
+   }
+   return this.dkk() / currency_value[gccode] + gccode; //currency_map[gccode];
 };
 
-Currency.prototype.scale = function (rhs) {
-  var n = new Currency(0, 'DKK');
-
-  for (var code in this.amounts) {
-    if (this.amounts.hasOwnProperty(code)) {
-      n.amounts[code] = this.amounts[code] * rhs;
-    }
-  }
-  return n;
+Currency.prototype.length = function() {
+   var k, n = 0;
+   for (k in this.amounts) {
+      if (this.amounts.hasOwnProperty(k)) {
+         n++;
+      }
+   }
+   return n;
 };
 
-function Options(n, avgvalue, antifraud, visasecure, recurring, multiacquirer, mobilepay) {
-  this.n = n;
-  this.avgvalue = avgvalue;
-  this.antifraud = antifraud;
-  this.visasecure = visasecure;
-  this.recurring = recurring;
-  this.multiacquirer = multiacquirer;
-  this.mobilepay = mobilepay;
+Currency.prototype.dkk = function() {
+   var sum = 0;
+   for (var code in this.amounts) {
+      if (this.amounts.hasOwnProperty(code) &&
+         currency_value.hasOwnProperty(code)) {
+         sum += currency_value[code] * this.amounts[code];
+      }
+   }
+   return sum;
+};
+
+Currency.prototype.add = function(rhs) {
+   var n = new Currency(0, 'DKK');
+   var code;
+
+   for (code in this.amounts) {
+      if (this.amounts.hasOwnProperty(code)) {
+         n.amounts[code] = this.amounts[code];
+      }
+   }
+
+   for (code in rhs.amounts) {
+      if (rhs.amounts.hasOwnProperty(code)) {
+         if (!n.amounts.hasOwnProperty(code)) {
+            n.amounts[code] = 0;
+         }
+         n.amounts[code] += rhs.amounts[code];
+      }
+   }
+   return n;
+};
+
+
+Currency.prototype.is_equal_to = function(other_currency_object) {
+   for (var code in this.amounts) {
+      if (this.amounts.hasOwnProperty(code)) {
+         if (this.amounts[code] !== other_currency_object.amounts[code]) {
+            return false;
+         }
+      }
+   }
+   return true;
+};
+
+Currency.prototype.scale = function(rhs) {
+   var n = new Currency(0, 'DKK');
+
+   for (var code in this.amounts) {
+      if (this.amounts.hasOwnProperty(code)) {
+         n.amounts[code] = this.amounts[code] * rhs;
+      }
+   }
+   return n;
+};
+
+function cardsCovered(acqs, s) {
+   // Check if all cards in settings.cards are covered
+   // with the selected acquirers (acqs).
+
+   for (var _card in s.cards) {
+
+      var cardfound = false;
+      for (var _acq in acqs) {
+
+         if( ACQs[_acq].cards[_card] ){
+            cardfound = true;
+            break;
+         }
+      }
+      if (!cardfound) { return false; }
+   }
+   return true;
 }
 
-var cards = {
-  "dankort": {
-    name: "Dankort",
-    logo: "dankort.png"
-  },
-  "visa": {
-    name: "Visa",
-    logo: "visa.png"
-  },
-  "mastercard": {
-    name: "MasterCard",
-    logo: "master.png"
-  },
-  "maestro": {
-    name: "Maestro",
-    logo: "maestro.png"
-  },
-  "diners": {
-    name: "Diners",
-    logo: "diners.png"
-  },
-  "amex": {
-    name: "American Express",
-    logo: "amex.png"
-  },
-  "jcb": {
-    name: "JCB",
-    logo: "jcb.png"
-  },
-  "unionpay": {
-    name: "UnionPay",
-    logo: "unionpay.png"
-  },
-  "forbrugsforeningen": {
-    name: "Forbrugsforeningen",
-    logo: "forbrugsforeningen.png"
-  }
-};
+function clone(obj) {
+    var copy = obj.constructor();
+    for (var attr in obj) {
+        if (obj.hasOwnProperty(attr)) copy[attr] = obj[attr];
+    }
+    return copy;
+}
 
 function acq_cost_default(o) {
-  return {
-    setup: this.fee_setup,
-    monthly: this.fee_monthly,
-    trans: o.avgvalue.scale(this.fee_variable / 100).add(this.fee_fixed).scale(o.n)
-  };
+   var _t = o.avgvalue.scale(this.fee_variable / 100).add(this.fee_fixed).scale(o.transactions);
+   return {
+      trans: _t,
+      total: _t.add(this.fee_monthly)
+   };
 }
 
-var acqs = { // alfabetisk rækkefølge
+function getInt(elem, action) {
 
-  "teller": {
-    name: "Teller",
-    logo: "teller.png",
-    link: "http://www.teller.com",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(1000, 'DKK'),
-    fee_monthly: new Currency(149, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.5,
-    costfn: function (o) {
-      var fee = this.fee_fixed.add(o.avgvalue.scale(this.fee_variable / 100));
-      if (fee.dkk() < 0.7) {
-        fee = new Currency(0.7, 'DKK');
-      }
-      return {
-        setup: this.fee_setup,
-        monthly: this.fee_monthly,
-        trans: fee.scale(o.n)
-      };
-    }
-  },
-  "handelsbanken": {
-    name: "Handelsbanken",
-    logo: "handelsbanken.png",
-    link: "http://www.handelsbanken.dk",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(0, 'DKK'),
-    fee_monthly: new Currency(0, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.5,
-    costfn: acq_cost_default
-  },
-  "nets": {
-    name: "nets",
-    logo: "nets.png",
-    link: "http://www.nets.eu",
-    cards: ["dankort"],
-    fee_setup: new Currency(250, 'DKK'),
-    fee_monthly: new Currency(1000 / 12, 'DKK'),
-    costfn: function (o) {
-      var fee = 1.39;
-      if (o.avgvalue.dkk() <= 100) {
-        fee = 1.1;
-      }
-      if (o.avgvalue.dkk() <= 50) {
-        fee = 0.7;
-      }
+   if (action === 'init') { elem.addEventListener("input", build, false); }
 
-      return {
-        setup: this.fee_setup,
-        monthly: this.fee_monthly,
-        trans: (new Currency(fee, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "nordea": {
-    name: "Nordea",
-    logo: "nordea.png",
-    link: "http://www.nordea.dk",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(0, 'DKK'),
-    fee_monthly: new Currency(0, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.6,
-    costfn: acq_cost_default
-  },
-  "swedbank": {
-    name: "Swedbank",
-    logo: "swedbank.png",
-    link: "http://www.swedbank.dk",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(1900, 'DKK'),
-    fee_monthly: new Currency(100, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.6,
-    costfn: acq_cost_default
-  },
-  "valitor": {
-    name: "Valitor",
-    logo: "valitor.png",
-    link: "http://www.valitor.com",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(0, 'DKK'),
-    fee_monthly: new Currency(0, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.5,
-    costfn: acq_cost_default
-  },
-  "elavon": {
-    name: "Elavon",
-    logo: "elavon.png",
-    link: "http://www.elavon.com",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(0, 'DKK'),
-    fee_monthly: new Currency(0, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.6,
-    costfn: acq_cost_default
-  },
-  "clearhaus": {
-    name: "Clearhaus",
-    logo: "clearhaus.svg",
-    link: "https://www.clearhaus.com",
-    cards: ["visa", "mastercard", "maestro"],
-    fee_setup: new Currency(0, 'DKK'),
-    fee_monthly: new Currency(0, 'DKK'),
-    fee_fixed: new Currency(0, 'DKK'),
-    fee_variable: 1.45,
-    costfn: acq_cost_default
-  }
-};
-
-var psps = { // alfabetisk rækkefølge
-
-  "braintree": {
-    name: "braintree",
-    logo: "braintree.png",
-    link: "https://www.braintreepayments.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.multiacquirer || o.mobilepay) { return null; }
-      return {
-        setup: new Currency(0, 'DKK'),
-        monthly: new Currency(0, 'DKK'),
-        trans: o.avgvalue.scale(2.9 / 100).add(new Currency(2.25, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "certitrade": {
-    name: "Certitrade",
-    logo: "certitrade.png",
-    link: "http://www.certitrade.net/kortbetalning.php",
-    is_acquirer: false,
-    acquirers: ["handelsbanken", "nordea", "euroline", "swedbank"],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.recurring || o.multiacquirer || o.mobilepay) { return null; }
-      return {
-        setup: new Currency(0, 'SEK'),
-        monthly: new Currency(192, 'SEK'),
-        trans: o.avgvalue.scale(0.9 / 100).add(new Currency(1.5, 'SEK')).scale(o.n)
-      };
-    }
-  },
-  "dandomain": {
-    name: "DanDomain",
-    logo: "dandomain.png",
-    link: "http://dandomain.dk/produkter/betalingssystem.html",
-    is_acquirer: false,
-    acquirers: ["nets", "teller"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.multiacquirer || o.mobilepay) { return null; }
-
-      var s = 199;
-      var m = 149;
-      if (o.visasecure) {
-        s += 99;
-        m += 49;
-      }
-
-      if (o.recurring) {
-        s += 299;
-        if (o.n < 100) m += 99;
-        else if (o.n < 1000) m += 149;
-        else m += 399;
-      }
-
-      return {
-        setup: new Currency(s, 'DKK'),
-        monthly: new Currency(m, 'DKK'),
-        trans: new Currency(0, 'DKK')
-      };
-    }
-  },
-  "dibsstartup": {
-    name: "DIBS Startup",
-    logo: "dibs.png",
-    link: "http://dibs.dk",
-    is_acquirer: false,
-    acquirers: ["nets", "euroline", "teller", "swedbank", "valitor", "handelsbanken", "elavon"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.recurring || o.visasecure || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-      return {
-        setup: new Currency(1495, 'DKK'),
-        monthly: new Currency(195, 'DKK'),
-        trans: (new Currency(1.5, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "dibspro": {
-    name: "DIBS Professional",
-    logo: "dibs.png",
-    link: "http://dibs.dk",
-    is_acquirer: false,
-    acquirers: ["nets", "euroline", "teller", "swedbank", "valitor", "handelsbanken", "elavon"],
-    cards: ["dankort", "visa", "mastercard", "maestro", "diners", "amex"],
-    costfn: function (o) {
-      if (o.antifraud || o.recurring || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-      return {
-        setup: new Currency(2000, 'DKK'),
-        monthly: new Currency(395, 'DKK'),
-        trans: (new Currency(1.5, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "dibsint": {
-    name: "DIBS International",
-    logo: "dibs.png",
-    link: "http://dibs.dk",
-    is_acquirer: false,
-    acquirers: ["nets", "euroline", "teller", "swedbank", "valitor", "handelsbanken", "elavon"],
-    cards: ["dankort", "visa", "mastercard", "maestro", "diners", "amex"],
-    costfn: function (o) {
-      return {
-        setup: new Currency(5000, 'DKK'),
-        monthly: new Currency(795, 'DKK'),
-        trans: (new Currency(1, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "epaylight": {
-    name: "ePay Light",
-    logo: "epay.png",
-    link: "http://epay.dk",
-    is_acquirer: false,
-    acquirers: ["nets"],
-    cards: ["dankort"],
-    costfn: function (o) {
-      if ( o.recurring || o.multiacquirer) {
-        return null;
-      }
-
-      var fee = 0.25;
-      var antifraud = 0;
-      if (o.antifraud) { antifraud = (new Currency(0.3, 'DKK')).scale(o.n); }
-
-      return {
-        setup: new Currency(399, 'DKK'),
-        monthly: new Currency(99, 'DKK'),
-        trans: (new Currency(fee, 'DKK')).scale(Math.max(o.n - 250, 0)).add(antifraud)
-      };
-    }
-  },
-  "epaypro": {
-    name: "ePay Pro",
-    logo: "epay.png",
-    link: "http://epay.dk",
-    is_acquirer: false,
-    acquirers: ["nets", "teller"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.recurring || o.multiacquirer) {return null;}
-
-      var fee = 0.25;
-      var antifraud = 0;
-      if (o.antifraud) { antifraud = (new Currency(0.3, 'DKK')).scale(o.n); }
-
-      return {
-        setup: new Currency(599, 'DKK'),
-        monthly: new Currency(199, 'DKK'),
-        trans: (new Currency(fee, 'DKK')).scale(Math.max(o.n - 250, 0)).add(antifraud)
-      };
-    }
-  },
-  "epaybusiness": {
-    name: "ePay Business",
-    logo: "epay.png",
-    link: "http://epay.dk",
-    is_acquirer: false,
-    acquirers: ["nets", "euroline", "teller", "swedbank", "handelsbanken", "valitor", "elavon", "clearhaus"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-
-      var fee = 0.25, antifraud = 0, recurring = 0;
-
-      if (o.antifraud) { antifraud = (new Currency(0.3, 'DKK')).scale(o.n); }
-      if (o.recurring) { recurring = (new Currency(1, 'DKK')).scale(o.n); }
-
-      return {
-        setup: new Currency(999, 'DKK').add(recurring),
-        monthly: new Currency(299, 'DKK'),
-        trans: (new Currency(fee, 'DKK')).scale(Math.max(o.n - 500, 0)).add(antifraud)
-      };
-    }
-  },
-  "netaxeptstart": {
-    name: "Netaxept Start",
-    logo: "nets.png",
-    link: "https://www.terminalshop.dk/Netaxept/",
-    is_acquirer: false,
-    acquirers: ["nets", "teller"],
-    cards: ["dankort", "visa", "mastercard"],
-    costfn: function (o) {
-      if ( o.recurring || o.multiacquirer || o.mobilepay ) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(1005, 'DKK'),
-        monthly: new Currency(180, 'DKK'),
-        trans: (new Currency(1.5, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "netaxeptplus": {
-    name: "Netaxept Plus",
-    logo: "nets.png",
-    link: "https://www.terminalshop.dk/Netaxept/",
-    is_acquirer: false,
-    acquirers: ["nets", "teller", "elavon", "euroline", "swedbank", "nordea"],
-    cards: ["dankort", "visa", "mastercard"],
-    costfn: function (o) {
-      if ( o.recurring || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(3016, 'DKK'),
-        monthly: new Currency(502, 'DKK'),
-        trans: (new Currency(1, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "netaxeptadvanced": {
-    name: "Netaxept Advanced",
-    logo: "nets.png",
-    link: "https://www.terminalshop.dk/Netaxept/",
-    is_acquirer: false,
-    acquirers: ["nets", "teller", "elavon", "euroline", "swedbank", "nordea"],
-    cards: ["dankort", "visa", "mastercard"],
-    costfn: function (o) {
-      if (o.multiacquirer) { return null; }
-
-      var recurring = 0;
-      if (o.recurring || o.multiacquirer) { recurring = (new Currency(250, 'DKK')); }
-
-      return {
-        setup: new Currency(7540, 'DKK'),
-        monthly: new Currency(703, 'DKK').add(recurring),
-        trans: (new Currency(0.7, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "payer": {
-    name: "Payer.se",
-    logo: "payer.png",
-    link: "http://payer.se/betallosning/",
-    is_acquirer: false,
-    acquirers: ["handelsbanken", "euroline", "swedbank", "nordea"],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.recurring || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(1400, 'SEK'),
-        monthly: new Currency(400, 'SEK'),
-        trans: (new Currency(2, 'SEK')).scale(o.n)
-      };
-    }
-  },
-  "paymill": {
-    name: "Paymill",
-    logo: "paymill.png",
-    link: "https://paymill.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-
-      if (o.antifraud || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(0, 'EUR'),
-        monthly: new Currency(0, 'EUR'),
-        trans: o.avgvalue.scale(2.95 / 100).add(new Currency(0.28, 'EUR')).scale(o.n)
-      };
-    }
-  },
-  "paypal": {
-    name: "paypal",
-    logo: "paypal.png",
-    link: "https://paypal.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      var oms = o.n * o.avgvalue.dkk();
-      var fee = 1.9;
-      if (oms <= 800000) {
-        fee = 2.4;
-      }
-      if (oms <= 400000) {
-        fee = 2.7;
-      }
-      if (oms <= 80000) {
-        fee = 2.9;
-      }
-      if (oms <= 20000) {
-        fee = 3.4;
-      }
-
-      return {
-        setup: new Currency(0, 'DKK'),
-        monthly: new Currency(0, 'DKK'),
-        trans: o.avgvalue.scale(fee / 100).add(new Currency(2.6, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "payson": {
-    name: "Payson",
-    logo: "payson.png",
-    link: "https://www.payson.se",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.recurring || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(0, 'SEK'),
-        monthly: new Currency(0, 'SEK'),
-        trans: o.avgvalue.scale(3 / 100).add(new Currency(3, 'SEK')).scale(o.n)
-      };
-    }
-  },
-  "payza": {
-
-    // Hvad med Foreign exchange gebyr (2,5%)?
-    // https://www.payza.com/support/payza-transaction-fees
-    name: "Payza",
-    logo: "payza.png",
-    link: "https://payza.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(0, 'DKK'),
-        monthly: new Currency(0, 'DKK'),
-        trans: o.avgvalue.scale(2.5 / 100).add(new Currency(1.9, 'DKK')).scale(o.n)
-      };
-    }
-  },
-  "pointbas": {
-    name: "Point Bas",
-    logo: "point.png",
-    link: "http://www.point.se/sv/Sweden/Start/E-handel/",
-    is_acquirer: false,
-    acquirers: ["handelsbanken", "nordea", "euroline", "swedbank"],
-    cards: ["visa", "mastercard", "diners", "amex"],
-    costfn: function (o) {
-      if (o.recurring || o.multiacquirer || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(999, 'SEK'),
-        monthly: new Currency(199, 'SEK'),
-        trans: (new Currency(4, 'SEK')).scale(Math.max(o.n - 100, 0))
-      };
-    }
-  },
-  "pointpremium": {
-    name: "Point Premium",
-    logo: "point.png",
-    link: "http://www.point.se/sv/Sweden/Start/E-handel/",
-    is_acquirer: false,
-    acquirers: ["handelsbanken", "nordea", "euroline", "swedbank"],
-    cards: ["visa", "mastercard", "diners", "amex"],
-    costfn: function (o) {
-      if (o.recurring || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(2499, 'SEK'),
-        monthly: new Currency(499, 'SEK'),
-        trans: (new Currency(2.5, 'SEK')).scale(Math.max(o.n - 400, 0))
-      };
-    }
-  },
-  "pointpremiumplus": {
-    name: "Point PremiumPlus",
-    logo: "point.png",
-    link: "http://www.point.se/sv/Sweden/Start/E-handel/",
-    is_acquirer: false,
-    acquirers: ["nets", "handelsbanken", "nordea", "euroline", "swedbank"],
-    cards: ["dankort", "visa", "mastercard", "diners", "amex", "jcb"],
-    costfn: function (o) {
-      if (o.recurring || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(4999, 'SEK'),
-        monthly: new Currency(1999, 'SEK'),
-        trans: (new Currency(0.75, 'SEK')).scale(Math.max(o.n - 4000, 0))
-      };
-    }
-  },
-
-  "stripe": {
-    name: "Stripe",
-    logo: "stripe.png",
-    link: "https://stripe.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.multiacquirer || o.mobilepay) { return null; }
-
-      return {
-        setup: new Currency(0, 'USD'),
-        monthly: new Currency(0, 'USD'),
-        trans: o.avgvalue.scale(2.9 / 100).add(new Currency(0.30, 'USD')).scale(o.n)
-      };
-    }
-  },
-
-  "quickpay": {
-    name: "quickpay",
-    logo: "quickpay.png",
-    link: "http://quickpay.dk",
-    is_acquirer: false,
-    acquirers: ["nets", "euroline", "teller", "swedbank", "Elavon", "handelsbanken", "clearhaus"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-
-      if (o.multiacquirer) { return null; }
-
-      var limits = [0, 500, 600, 1000, 3000, 10000, 30000];
-      var fees = [0, 0.5, 0.4, 0.3, 0.25, 0.15, 0.1];
-      var price = 0;
-      var accum = 0;
-      for (var i = 0; i < limits.length; i++) {
-        var delta;
-        if (i < limits.length - 1) {
-          delta = Math.min(limits[i + 1] - limits[i], o.n - accum);
-        } else {
-          delta = o.n - accum;
-        }
-        price += delta * fees[i];
-        accum += delta;
-      }
-      return {
-        setup: new Currency(0, 'DKK'),
-        monthly: new Currency(150, 'DKK'),
-        trans: new Currency(price, 'DKK')
-      };
-    }
-  },
-
-  "scannet": {
-    name: "Scannet",
-    logo: "scannet.png",
-    link: "http://www.scannet.dk/hosting/betalingsloesning/",
-    is_acquirer: false,
-    acquirers: ["nets", "teller"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.recurring || o.visasecure || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      return {
-        setup: new Currency(950, 'DKK'),
-        monthly: new Currency(399, 'DKK'),
-        trans: new Currency(0, 'DKK')
-      };
-    }
-  },
-  "skrill": {
-    name: "Skrill",
-    logo: "skrill.png",
-    link: "https://skrill.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.multiacquirer || o.mobilepay) {
-        return null;
-      }
-
-      var oms = o.n * o.avgvalue.dkk();
-      var fee = 1.9;
-      if (oms <= (new Currency(50000, 'EUR')).dkk()) {
-        fee = 2.1;
-      }
-      if (oms <= (new Currency(25000, 'EUR')).dkk()) {
-        fee = 2.5;
-      }
-      if (oms <= (new Currency(2500, 'EUR')).dkk()) {
-        fee = 2.9;
-      }
-
-      return {
-        setup: new Currency(0, 'EUR'),
-        monthly: new Currency(0, 'EUR'),
-        trans: o.avgvalue.scale(fee / 100).add(new Currency(0.25, 'EUR')).scale(o.n)
-      };
-    }
-  },
-  "wannafind": {
-    name: "Wannafind",
-    logo: "wannafind.png",
-    link: "https://wannafind.dk/betalingsgateway/",
-    is_acquirer: false,
-    acquirers: ["nets", "teller"],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.multiacquirer || o.mobilepay) { return null; }
-
-      var recurring = 0, visasecure = 0;
-
-      if (o.visasecure) { visasecure = (new Currency(49, 'DKK')); }
-      if (o.recurring) { recurring = (new Currency(99, 'DKK')); }
-
-      return {
-        setup: new Currency(0, 'DKK'),
-        monthly: new Currency(149, 'DKK').add(recurring).add(visasecure),
-        trans: new Currency(0, 'DKK')
-      };
-    }
-  },
-  "yourpay": {
-    name: "yourpay",
-    logo: "yourpay.png",
-    link: "http://yourpay.dk",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["dankort", "visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.antifraud || o.multiacquirer || o.recurring || o.mobilepay) {
-        return null;
-      }
-
-      var fee = 2.25;
-
-      return {
-        setup: new Currency(0, 'DKK'),
-        monthly: new Currency(0, 'DKK'),
-        trans: o.avgvalue.scale(fee / 100).scale(Math.max(o.n, 0))
-      };
-    }
-  },
-  "klarnacheckout": {
-    name: "klarna checkout",
-    logo: "klarna.png",
-    link: "https://klarna.se",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro"],
-    costfn: function (o) {
-      if (o.multiacquirer || o.mobilepay) { return null; }
-
-      var fee = 2.95;
-
-      return {
-        setup: new Currency(3995, 'SEK'),
-        monthly: new Currency(599, 'SEK'),
-        trans: o.avgvalue.scale(fee / 100).scale(o.n)
-      };
-    }
-  },
-  "2checkout": {
-    name: "2checkout",
-    logo: "2checkout.png",
-    link: "https://www.2checkout.com",
-    is_acquirer: true,
-    acquirers: [],
-    cards: ["visa", "mastercard", "maestro", "amex", "jcb", "diners"],
-    costfn: function (o) {
-      if (o.multiacquirer || o.mobilepay) { return null; }
-
-      var fee = 5.5;
-
-      return {
-        setup: new Currency(0, 'USD'),
-        monthly: new Currency(0, 'USD'),
-        trans: o.avgvalue.scale(fee / 100).add(new Currency(0.45, 'USD')).scale(o.n)
-      };
-    }
-  }
-
-};
-
-
-
-
-
-
-
-
-/*----------------------------------------------------------------------
-   Functions
------------------------------------------------------------------------*/
-
-
-
-
-// $('html-id');
-function $(s) {
-   return document.getElementById(s);
-}
-
-// $('html-className');
-function C(s) {
-   return document.getElementsByClassName(s);
-}
-
-var default_acquirer_fees = {};
-var default_currency = "DKK";
-var default_transactions = 500;
-var default_amount = 450;
-var color_error = "#f88";
-var color_good = null;
-
-function getInt(k) {
-   var elem = $(k);
    var str = elem.value.trim();
    if (!isNaN(parseFloat(str)) && isFinite(str) &&
       parseFloat(str) == parseInt(str, 10)) {
-      $(k).style.background = color_good;
+      elem.classList.remove('error');
       return parseInt(str, 10);
    }
-   $(k).style.background = color_error;
+   $(k).classList.add('error');
    return null;
 }
 
 function setInt(k, v) {
    $(k).value = parseInt(v, 10);
-   $(k).style.background = color_good;
+   $(k).classList.remove('error');
 }
 
 function mkcurregex() {
    var k, a = [];
-   for (k in currency_map) { a.push(currency_map[k]); }
-   for (k in currency_value) { a.push(k); }
+   for (k in currency_map) {
+      a.push(currency_map[k]);
+   }
+   for (k in currency_value) {
+      a.push(k);
+   }
    return RegExp("^ *([0-9][0-9., ]*)(" + a.join("|") + ")? *$", "i");
 }
-
 var curregex = mkcurregex();
 
 function _getCurrency(currency) {
    var a = currency.match(curregex);
-   if (a === null) { return null; }
-
+   if (a === null) {
+      return null;
+   }
    var c = a[2] ? a[2] : currency_map[gccode];
    if (c.toLowerCase() === currency_map[gccode].toLowerCase()) {
       /* there are a lot of currencies named kr and we should prefer the kr
@@ -977,23 +218,25 @@ function _getCurrency(currency) {
       /* if that's not what's selected, find the currency */
       for (var k in currency_map) {
          if (currency_map[k].toLowerCase() === c.toLowerCase() ||
-             k.toLowerCase() === c.toLowerCase()) {
+            k.toLowerCase() === c.toLowerCase()) {
             c = k;
             break;
          }
       }
    }
-
    return new Currency(parseFloat(a[1].replace('.', '').replace(',', '.')), c);
 }
 
-function getCurrency(currency) {
+function getCurrency(currency, action) {
+
+   if (action === 'init') { $(currency).addEventListener("input", build, false); }
+
    var a = _getCurrency($(currency).value);
    if (a === null) {
-      $(k).style.background = color_error;
+      $(currency).classList.add('error');
       return null;
    }
-   $(currency).style.background = color_good;
+   $(currency).classList.remove('error');
    return a;
 }
 
@@ -1001,155 +244,169 @@ function changeCurrency(option) {
    $('currency_code').innerHTML = option.value;
    set_ccode(option.value);
    build();
-   save_url();
+   //save_url();
 }
 
 function setCurrency(k, v) {
    $(k).value = v.represent();
-   $(k).style.background = color_good;
-}
-
-function getOption(k, prefix) {
-   return $(k).options[$(k).selectedIndex].id.substr(prefix.length);
-}
-
-function setOption(v, prefix) {
-   $(prefix + v).selected = true;
+   $(k).classList.remove('error');
 }
 
 function getPercent(k) {
    var elem = $(k);
    var str = elem.value.replace('%', '').replace(',', '.').trim();
    if (!isNaN(parseFloat(str)) && isFinite(str)) {
-      $(k).style.background = color_good;
+      $(k).classList.remove('error');
       return parseFloat(str);
    }
-   $(k).style.background = color_error;
+   $(k).classList.add('error');
    return null;
 }
 
 function setPercent(k, v) {
    $(k).value = (parseFloat(v) + "%").replace('.', ',');
-   $(k).style.background = color_good;
+   $(k).classList.remove('error');
 }
 
-function getBool(k) {
-   return $(k).checked ? true : false;
+function tooltip() {
+
+   console.log("hover");
+
 }
 
-function setBool(k, v) {
-   if (typeof v === "number") {
-      v = v && 1;
-   }
-   $(k).checked = v ? true : false;
-}
 
 var opts = {
-   'acquirer': {
+   'cards': {
       type: "bits",
-      bits: 4,
-      get: function (a) {
-         if (a === "url") {
-            return parseInt($("acquirer")[$("acquirer").selectedIndex].value);
-         }
-         return getOption('acquirer', 'acq_');
+      bits: function() {
+          return C("ocards").length;
       },
-      set: function (v) {
-         if (typeof v === "number") {
-            for (var i = 0; i < $("acquirer").length; i++) {
-               if (parseInt($("acquirer")[i].value) === v) {
-                  $("acquirer")[i].selected = true;
-               }
-            }
-            return;
-         }
-         setOption(v, 'acq_');
-      },
-      def: 'auto'
-   },
-   'visasecure': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('visasecure');
-      },
-      set: function (v) {
-         setBool('visasecure', v);
-      },
-      def: true
-   },
-   'fraud_fighter': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('fraud_fighter');
-      },
-      set: function (v) {
-         setBool('fraud_fighter', v);
-      },
-      def: false
-   },
-   'recurring': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('recurring');
-      },
-      set: function (v) {
-         setBool('recurring', v);
-      },
-      def: false
-   },
-   'multiacquirer': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('multiacquirer');
-      },
-      set: function (v) {
-         setBool('multiacquirer', v);
-      },
-      def: false
-   },
-   'dankort': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('dankort');
-      },
-      set: function (v) {
-         setBool('dankort', v);
-      },
-      def: true
-   },
-   'visa_mastercard': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('visa_mastercard');
-      },
-      set: function (v) {
-         setBool('visa_mastercard', v);
-      },
-      def: true
-   },
-   'mobilepay': {
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return +getBool('mobilepay');
-      },
-      set: function (v) {
-         setBool('mobilepay', v);
-      },
-      def: false
-   },
+      get: function(action) {
+         // Get all selected payment methods from .ocards
+         var object = {};
+         var ocards = C("ocards");
+         var bitval = 0;
+         for(i = 0; i < ocards.length; i++) {
+            var checkbox = ocards[i];
+            if (action === 'init') { checkbox.addEventListener("click", build, false); }
 
+            if (checkbox.checked) {
+               object[checkbox.id] = CARDs[checkbox.id];
+               if (checkbox.id == "visa") { object.mastercard = CARDs.mastercard; }
+               bitval += 1 << i;
+            }
+         }
+         if (action === "url") { return bitval; }
+         return object;
+      },
+      set: function(bitval) {
+         var ocards = C("ocards");
+         for(i = 0; i < ocards.length; i++) {
+            var checkbox = ocards[i];
+            checkbox.checked = (bitval & (1 << i)) !== 0;
+         }
+      }
+   },
+   'features': {
+      type: "bits",
+      bits: function() {
+          return C("ofeatures").length;
+      },
+      get: function(action) {
+         // Get all selected features
+         var object = {};
+         var ofeatures = C("ofeatures");
+         var bitval = 0;
+         for(i = 0; i < ofeatures.length; i++) {
+            var checkbox = ofeatures[i];
+            if (action === 'init') { checkbox.addEventListener("click", build, false); }
+            if ( checkbox.checked ) {
+                object[checkbox.id] = 1;
+                bitval += 1 << i;
+            }
+            //if (action === "url") console.log(ofeatures[i].id + ": " + checkbox.checked);
+         }
+         if (action === "url") {return bitval;}
+         return object;
+      },
+      set: function(bitval) {
+         var ofeatures = C("ofeatures");
+         for(i = 0; i < ofeatures.length; i++) {
+             var checkbox = ofeatures[i];
+             checkbox.checked = (bitval & (1 << i)) !== 0;
+         }
+      }
+   },
+   // Misc
+   'acquirers': {
+      type: "bits",
+      bits: function() {
+          var len = $("acquirer").length;
+          var nbits = 0;
+          while (len > 0) {
+              len = len >>> 1;
+              nbits++;
+          }
+          return nbits;
+      },
+      get: function(action) {
+         if (action === 'init') { $('acquirer').addEventListener("change", build, false); }
+
+         // Return the selected acquirers
+         var name = $("acquirer").value;
+         if (action === "url" ){
+             return $("acquirer").selectedIndex;
+         }
+         if ($("acquirer").value == 'auto') {
+            return ACQs;
+         }
+         else {
+            var objekt = {};
+            objekt[name] = ACQs[name];
+            return objekt;
+         }
+      },
+      set: function(bitval) {
+         if (bitval < $("acquirer").length) { $("acquirer").selectedIndex = bitval; }
+      },
+   },
+   'transactions': {
+      type: "string",
+      dirty_bits: 1,
+      get_dirty_bits: function() { return +(this.get() !== parseInt($('transactions').defaultValue)); },
+      get: function(action) { return getInt($('transactions'), action); },
+      set: function(v) { setInt('transactions', v); }
+   },
+   'avgvalue': {
+      type: "currency",
+      dirty_bits: 1,
+      get_dirty_bits: function() { console.log("?????");console.log(this.get());console.log(_getCurrency($('avgvalue').defaultValue));
+          return +(!this.get().is_equal_to(_getCurrency($('avgvalue').defaultValue))); },
+      get: function(action) { return getCurrency('avgvalue', action); },
+      set: function(v) { setCurrency('avgvalue', _getCurrency(v)); }
+   },
+   'currency': {
+      type: "string",
+      dirty_bits: 1,
+       get_dirty_bits: function() { return +(this.get() !== $('currency_code_select').options[0].value); },
+      get: function() { return gccode; },
+      set: function(v) {
+         var select = $("currency_code_select");
+         for (var i = 0; i < select.length; i++) {
+            if (select.options[i].value === v) {
+               select.selectedIndex = i;
+               $('currency_code').innerHTML = v;
+               break;
+            }
+         }
+         set_ccode(v);
+      }
+   },
    // Dirty bits: bit0 = er der ændret i antal/gns, bit 1..N_acquirers+1 er der ændret i acquirer costs?  --- Objekter der bruger dirty-bits skal være EFTER
-   'dirty_bits': {
+   /*'dirty_bits': {
       type: "bits",
       bits: 0, //sættes on the fly
-      get: function () {
+      get: function() {
          var sum = 0;
          for (var k in opts) {
             if (opts.hasOwnProperty(k) && opts[k].dirty_bits) {
@@ -1159,543 +416,343 @@ var opts = {
          return sum; //17;// detect de acquirers der er ændret i og konverter til binary
          // 17 => nummber 1 og nummer 5
       },
-      set: function (i) {
-
-      },
-      def: ""
-   },
-   'currency': {
-       type: "string",
-       dirty_bits: 1,
-       get_dirty_bits: function () {
-          return +(this.get() !== this.def);
-       },
-       get: function () {
-          return get_ccode();
-       },
-       set: function (v){
-          var select = $("currency_code_select");
-          for( var i = 0; i < select.length; i ++ ){
-              if( select.options[i].value === v){
-                  select.selectedIndex = i;
-                  $('currency_code').innerHTML = v;
-                  break;
-              }
-          }
-          set_ccode( v );
-       },
-       def: "DKK"
-   },
-   'transactions': {
-      type: "string",
-      dirty_bits: 1,
-      get_dirty_bits: function () {
-         return +(this.get() !== this.def);
-      },
-      get: function () {
-         return getInt('transactions');
-      },
-      set: function (v) {
-         setInt('transactions', v);
-      },
-      def: default_transactions
-   },
-   'average_value': {
-      type: "currency",
-      dirty_bits: 1,
-      get_dirty_bits: function () {
-         return +!this.get().is_equal_to(this.def);
-      },
-      get: function () {
-         return getCurrency('average_value');
-      },
-      set: function (v) {
-         setCurrency('average_value', v);
-      },
-      def: new Currency(default_amount, default_currency)
-   },
-   'acquirer_opts': {
-      type: "string",
-      dirty_bits: undefined, // sættes af init_acqs()
-      get_dirty_bits: function () {
-         var sum = 0,
-            i = 0;
-         for (var k in acqs) {
-            if (acqs.hasOwnProperty(k) && k !== "nets") {
-               sum = sum << 1;
-               if (!acqs[k].fee_fixed.is_equal_to(default_acquirer_fees[k].fee_fixed)) {
-                  sum += 1;
-               }
-               sum = sum << 1;
-               if (acqs[k].fee_variable !== default_acquirer_fees[k].fee_variable) {
-                  sum += 1;
-               }
-               i++;
-            }
-         }
-         return sum;
-      },
-      get: function () {
-         var str = "";
-         for (var k in acqs) {
-            if (acqs.hasOwnProperty(k) && k !== "nets") {
-               if (!acqs[k].fee_fixed.is_equal_to(default_acquirer_fees[k].fee_fixed)) {
-                  var amount = acqs[k].fee_fixed.amounts;
-                  for (var cur in amount) {
-                     str += amount[cur] + cur + ",";
-                  }
-               }
-               if (acqs[k].fee_variable !== default_acquirer_fees[k].fee_variable) {
-                  str += acqs[k].fee_variable + ",";
-               }
-            }
-         }
-         if (str.length > 0) {
-            str = str.substring(0, str.length - 1);
-         }
-         return str;
-      },
-      set: function (v, bits) {
-         var i = 0,
-            array_position = 0;
-         var value_array = v.split(",");
-
-         for (var k in acqs) {
-            if (acqs.hasOwnProperty(k) && k !== "nets") {
-               if (get_bit_range(bits, i, i, this.dirty_bits)) {
-                  acqs[k].fee_fixed = _getCurrency(value_array[array_position]);
-                  array_position++;
-               }
-               i++;
-               if (get_bit_range(bits, i, i, this.dirty_bits)) {
-                  acqs[k].fee_variable = parseFloat(value_array[array_position].replace(',', '.'));
-                  array_position++;
-               }
-               i++;
-            }
-         }
-      }
-   },
-   //==========
-   // INACTIVE
-   //==========
-   'paii': {
-      inactive: true,
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return false;
-      },
-      set: function (v) {},
-      def: false
-   },
-   'bitcoin': {
-      inactive: true,
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return false;
-      },
-      set: function (v) {},
-      def: false
-   },
-   'setup_loss': {
-      inactive: true,
-      type: "bits",
-      bits: 1,
-      get: function () {
-         return 0.16;
-      },
-      set: function (v) {},
-      def: 0.16
-   }
+      set: function(i) {}
+   }*/
 };
 
-
-/*
-Acquirer options panel.
-*/
-var sopts = {
-   'acquirer_fixed': {
-      get: function () {
-         return getCurrency('acquirer_fixed');
-      },
-      set: function (v) {
-         setCurrency('acquirer_fixed', v);
-      },
-      def: function () {
-         return acqs[opts.acquirer.get()].fee_fixed;
-      }
-   },
-   'acquirer_variable': {
-      get: function () {
-         return getPercent('acquirer_variable');
-      },
-      set: function (v) {
-         setPercent('acquirer_variable', v);
-      },
-      def: function () {
-         return acqs[opts.acquirer.get()].fee_variable;
-      }
-   },
-   'acquirer_setup': {
-      get: function () {
-         return getCurrency('acquirer_setup');
-      },
-      set: function (v) {
-         setCurrency('acquirer_setup', v);
-      },
-      def: function () {
-         return acqs[opts.acquirer.get()].fee_setup;
-      }
-   },
-   'acquirer_monthly': {
-      get: function () {
-         return getCurrency('acquirer_monthly');
-      },
-      set: function (v) {
-         setCurrency('acquirer_monthly', v);
-      },
-      def: function () {
-         return acqs[opts.acquirer.get()].fee_monthly;
-      }
+function objectize(arr) {
+   // Array to object
+   var objekt = {};
+   for (i = 0; i < arr.length; i++)
+   {
+      objekt[arr[i]] = 1;
    }
-};
-
-
-
-function rnf(n) {
-   return (typeof n == 'function') ? n() : n;
+   return objekt;
 }
-
-function init_acqs() {
-   var s = '<option id="acq_auto" value="0">Automatisk</option>';
-   var i = 0;
-   for (var k in acqs) {
-      if (acqs.hasOwnProperty(k) && k !== 'nets') {
-
-         i++;
-         s += '<option id="acq_' + k + '" value="' + i + '">' + acqs[k].name + '</option>';
-         default_acquirer_fees[k] = {};
-         default_acquirer_fees[k].fee_fixed = acqs[k].fee_fixed;
-         default_acquirer_fees[k].fee_variable = acqs[k].fee_variable;
-         default_acquirer_fees[k].fee_monthly = acqs[k].fee_monthly;
-         default_acquirer_fees[k].fee_setup = acqs[k].fee_setup;
-      }
-   }
-   opts.acquirer_opts.dirty_bits = 2 * i;
-   $('acquirer').innerHTML = s;
-
-   // C('acquirer_description')[0].style.display = 'block';
-   // C('acquirer_options')[0].style.display = 'none';
-
-}
-
-function init_defaults() {
-   for (var k in opts) {
-      if (opts[k].def) {
-         opts[k].set(rnf(opts[k].def));
-      }
-   }
-}
-
-function price_total(v, s, loss) {
-   return v.trans.scale(s).add(v.monthly).add(v.setup.scale(loss / 12));
-}
-
-function intersect(a, b) {
-   var r = [];
-
-   for (var i = 0; i < a.length; i++) {
-      if (b.indexOf(a[i]) !== -1) {
-         r.push(a[i]);
-      }
-   }
-
-   return r;
-}
-
-var prevstate = {};
 
 function build(action) {
-   if (action == 'init') {
-      init_acqs();
-      init_defaults();
-      init_dirty_bits();
-      load_url(location.search);
-   }
-
-   var counter = 0;
-   var k;
-   var newstate = {};
-   for (k in opts) {
-      newstate[k] = rnf(opts[k].get());
-   }
-   for (k in sopts) {
-      newstate[k] = rnf(sopts[k].get());
-   }
+   stopwatch = performance.now();
+   console.log( (performance.now()-stopwatch).toFixed(4) +"ms ::: build() start");
 
    if (action == 'init') {
-      prevstate = newstate;
+      //init_dirty_bits(); // 0.3 ms
+      loadurl(); // 0.4 ms
    }
 
-   for (k in newstate) {
-      if (newstate[k] === null) {
-         newstate[k] = prevstate[k];
+   // Get settings
+   var settings = {};
+   for (var key in opts) { if (key !== "dirty_bits") { settings[key] = opts[key].get(action); }}
+   var acquirers = clone(settings.acquirers);
+
+   settings.acquirersort = [];
+
+   if ( !settings.cards.dankort ) {
+
+      delete acquirers.nets;
+      settings.dankort_scale = 0;
+
+      if ( !settings.cards.visa ) {
+         $('tbody').innerHTML = "";
+         alert("Venligst vælg enten Dankort, Visa eller MasterCard.");
+         return;
+      }
+      if ( settings.cards.forbrugsforeningen ) {
+         $('tbody').innerHTML = "";
+         alert("Forbrugsforeningens kontokort kræver en Dankort aftale.");
+         return;
       }
    }
-
-   var acq = newstate.acquirer;
-   if (newstate.acquirer != prevstate.acquirer) {
-
-      setAcquirerPanel();
-
-   } else if (acq != "auto") {
-
-      // Denne skal gerne slås sammen med setAcquirerPanel();
-      acqs[acq].fee_fixed = newstate.acquirer_fixed;
-      acqs[acq].fee_variable = newstate.acquirer_variable;
-      acqs[acq].fee_monthly = newstate.acquirer_monthly;
-      acqs[acq].fee_setup = newstate.acquirer_setup;
+   else {
+      acquirers.nets = ACQs.nets;
+      settings.dankort_scale = (!settings.cards.visa) ? 1 : 0.77;
    }
 
-   var o = new Options(newstate.transactions, newstate.average_value,
-      newstate.fraud_fighter, newstate.visasecure, newstate.recurring, newstate.multiacquirer, newstate.mobilepay);
-   
-   var table = $('data');
-   table.innerHTML = "";
-   var rows = [];
-   var dkpoffset = 0;
+   var costs = {};
+   var data = [];
+   var tbody = document.createElement("tbody");
+   tbody.id = "tbody";
 
-   var info_icon = '<p class="tooltip"><img src="/img/tooltip.gif"><span>';
-   var info_icon_end = '</span></p>';
+   for (i in acquirers) {
 
-   for (k in psps) {
-      var use_dankort = newstate.dankort;
-      var use_visamc = newstate.visa_mastercard;
-      var forbrugsforeningen = newstate.forbrugsforeningen;
-      var diners_amex_jcb = newstate.diners_amex_jcb;
-      var mobilepay = newstate.mobilepay;
-      var paii = newstate.paii;
+      // Calculate individual acquirer costs
+      acquirers[i].fee = acquirers[i].costfn(settings);
 
-      var dankort_penalty = false;
-      if (use_dankort) {
-         if (psps[k].cards.indexOf('dankort') < 0 || (psps[k].acquirers.indexOf('nets') < 0 && !psps[k].is_acquirer)) {
-            continue;
+      if (i == "nets") { continue; } // uglyfix[1]
+
+      for (sort = 0; sort < settings.acquirersort.length; sort++){
+         if ( acquirers[i].fee.total.dkk() < acquirers[settings.acquirersort[sort]].fee.total.dkk() ) {
+            break;
          }
       }
 
-      if (!use_dankort && !use_visamc) {
-         continue;
+      settings.acquirersort.splice(sort, 0, i);
+   }
+   if (acquirers.nets) { settings.acquirersort.splice(0, 0, "nets"); } // uglyfix[1]
+
+   for (i in settings.cards) {
+      // Some payment methods have extra costs. Lets calculate them.
+      if (settings.cards[i].costfn){
+         settings.cards[i].fee = settings.cards[i].costfn(settings);
       }
-      if (use_visamc && psps[k].cards.length == 1 && psps[k].cards[0] == 'dankort') {
-         continue;
-      }
-
-      if (psps[k].is_acquirer && acq != 'auto') {
-         continue;
-      }
-
-      var tmpacq = acq;
-      var tmpo = o;
-
-      var visamc_scale = 0.20;
-      var dankort_scale = 0.80;
-      if (!use_dankort) {
-         visamc_scale = 1;
-         dankort_scale = 0;
-      }
-      if (!use_visamc) {
-         visamc_scale = 0;
-         dankort_scale = 1;
-         //tmpo.visasecure = false;
-      }
-      if (k === "yourpay") {
-         visamc_scale = 1;
-         dankort_scale = 0;
-      }
-
-      if (tmpacq == "auto") {
-         var best = null;
-         for (var a in acqs) {
-            if (a == "nets") {
-               continue;
-            }
-            if (psps[k].acquirers.indexOf(a) < 0) {
-               continue;
-            }
-            if (best === null) {
-               tmpacq = a;
-               best = acqs[a].costfn(tmpo);
-               continue;
-            }
-
-            var cmp = acqs[a].costfn(tmpo);
-            if (price_total(best, visamc_scale, newstate.setup_loss).dkk() >
-               price_total(cmp, visamc_scale, newstate.setup_loss).dkk()) {
-               tmpacq = a;
-               best = cmp;
-            }
-         }
-      }
-      if (use_visamc && psps[k].acquirers.indexOf(tmpacq) < 0 && !psps[k].is_acquirer) {
-         continue;
-      }
-
-      var c_psp = psps[k].costfn(tmpo);
-      if (c_psp === null) {
-         continue;
-      }
-
-      var i_setup = {};
-      var i_fixedmonth = {};
-      var i_totalmonth = {};
-      var i_trans = {};
-
-      var n_cards = [];
-      var n_acqs = [];
-
-      i_setup[psps[k].name] = c_psp.setup;
-      i_fixedmonth[psps[k].name] = c_psp.monthly;
-      i_totalmonth[psps[k].name] = price_total(c_psp, psps[k].is_acquirer ? visamc_scale : 1, newstate.setup_loss);
-
-      if (use_dankort && psps[k].acquirers.indexOf("nets") >= 0) {
-         var c_nets = acqs.nets.costfn(tmpo);
-         var netsname = 'nets (' + dankort_scale * 100 + '% tr.)';
-
-         i_setup.nets = c_nets.setup;
-         i_fixedmonth.nets = c_nets.monthly;
-         i_totalmonth[netsname] = price_total(c_nets, dankort_scale, newstate.setup_loss);
-         n_acqs.push('nets');
-         n_cards.push('dankort');
-      }
-
-      if (!psps[k].is_acquirer && use_visamc) {
-         var c_acq = acqs[tmpacq].costfn(tmpo);
-         var acqname = acqs[tmpacq].name + ' (' + visamc_scale * 100 + '% tr.)';
-
-         i_setup[acqs[tmpacq].name] = c_acq.setup;
-         i_fixedmonth[acqs[tmpacq].name] = c_acq.monthly;
-         i_totalmonth[acqname] = price_total(c_acq, visamc_scale, newstate.setup_loss);
-
-         n_cards = n_cards.concat(intersect(psps[k].cards, acqs[tmpacq].cards));
-         n_acqs.push(tmpacq);
-      } else if (use_visamc) {
-         n_cards = n_cards.concat(psps[k].cards);
-      }
-
-      var l;
-      for (l in i_totalmonth) {
-         i_trans[l] = i_totalmonth[l].scale(1 / newstate.transactions);
-      }
-
-      var s_setup = [];
-      var t_setup = new Currency(0, 'DKK');
-      var s_fixedmonth = [];
-      var t_fixedmonth = new Currency(0, 'DKK');
-      var s_totalmonth = [];
-      var t_totalmonth = new Currency(0, 'DKK');
-      var s_trans = [];
-      var t_trans = new Currency(0, 'DKK');
-
-      for (l in i_setup) {
-         s_setup.push(l + ': ' + i_setup[l].print());
-         t_setup = t_setup.add(i_setup[l]);
-      }
-      for (l in i_fixedmonth) {
-         s_fixedmonth.push(l + ': ' + i_fixedmonth[l].print());
-         t_fixedmonth = t_fixedmonth.add(i_fixedmonth[l]);
-      }
-      for (l in i_totalmonth) {
-         s_totalmonth.push(l + ': ' + i_totalmonth[l].print());
-         t_totalmonth = t_totalmonth.add(i_totalmonth[l]);
-      }
-      for (l in i_trans) {
-         s_trans.push(l + ': ' + i_trans[l].print());
-         t_trans = t_trans.add(i_trans[l]);
-      }
-
-      var logo, name;
-
-      var h_cards = "";
-      for (l in n_cards) {
-         logo = cards[n_cards[l]].logo;
-         name = cards[n_cards[l]].name;
-         h_cards += '<img src="/img/cards/' + logo + '" alt="' + name +
-            '" title="' + name + '" />';
-      }
-
-      var h_acqs = [];
-      for (l in n_acqs) {
-         logo = acqs[n_acqs[l]].logo;
-         name = acqs[n_acqs[l]].name;
-         link = acqs[n_acqs[l]].link;
-         h_acqs.push('<a target="_blank" href="' + link + '"><img src="/img/acquirer/' + logo + '" alt="' + name +
-            '" title="' + name + '" /></a>');
-      }
-      h_acqs = h_acqs.join("");
-
-      // Safari har en bug hvor empty cells ikke bliver vist, selv
-      // med [empty-cells: show;]. Derfor indsætter vi et nb-space.
-      if (h_acqs.length === 0) {
-         h_acqs = "&nbsp;";
-      }
-
-      var i;
-      if (dankort_penalty) {
-         for (i = dkpoffset; i < rows.length; ++i) {
-            if (t_totalmonth.dkk() < rows[i]) {
-               break;
-            }
-         }
-      } else {
-         for (i = 0; i < dkpoffset; ++i) {
-            if (t_totalmonth.dkk() < rows[i]) {
-               break;
-            }
-         }
-         dkpoffset++;
-      }
-      rows.splice(i, 0, t_totalmonth.dkk());
-
-      var row = table.insertRow(i);
-
-      var logo_cell = row.insertCell(0);
-      var acq_cell = row.insertCell(1);
-      var card_cell = row.insertCell(2);
-      var setup_cell = row.insertCell(3);
-      var fixedmonth_cell = row.insertCell(4);
-      var totalmonth_cell = row.insertCell(5);
-      var trans_cell = row.insertCell(6);
-
-      logo_cell.innerHTML = '<a target="_blank" href=' + psps[k].link + '><img src="/img/psp/' + psps[k].logo + '" alt="' + psps[k].name +
-         '" title="' + psps[k].name + '" />' + psps[k].name +
-         '</a>';
-      acq_cell.innerHTML = h_acqs;
-      card_cell.innerHTML = h_cards;
-      setup_cell.innerHTML = t_setup.print() + info_icon + s_setup.join("<br />") + info_icon_end;
-      fixedmonth_cell.innerHTML = t_fixedmonth.print() + info_icon + s_fixedmonth.join("<br />") + info_icon_end;
-      totalmonth_cell.innerHTML = t_totalmonth.print() + info_icon + s_totalmonth.join("<br />") + info_icon_end;
-      trans_cell.innerHTML = t_trans.print() + info_icon + s_trans.join("<br />") + info_icon_end;
-
-      counter++;
    }
 
-   prevstate = newstate;
+   console.log( (performance.now()-stopwatch).toFixed(3) +"ms ::: time to build PSPs.");
 
-   if (action !== "init") {
-      save_url();
+   var klik = function(psp, acquirers, acqlabels, settings) {
+      return function() {
+         buildInfoModal(psp, acquirers, acqlabels, settings);
+      };
+   };
+
+   psploop:
+   for (k in PSPs) {
+
+      var psp = PSPs[k];
+      var acq = clone(psp.acquirers || {});
+      var setup = new Currency(0, 'DKK'), recurring = new Currency(0, 'DKK'), total = new Currency(0, 'DKK');
+      var cardobj = {};
+
+      // Check if psp support all cards
+      for (i in settings.cards) {
+         if( !psp.cards[i] ){ continue psploop; }
+      }
+      // Check if psp support all features
+      for (i in settings.features) {
+         if( !psp.features[i] ){ continue psploop; }
+      }
+
+      // If a specific acquirer has been chosen (select dropdown)
+      if ( Object.keys(settings.acquirers).length === 1 ){
+
+         // Skip psp if it does not support selected acquirer
+         if( !acq[Object.keys(settings.acquirers)[0]] ){
+            continue psploop;
+         }
+      }
+
+      if( Object.getOwnPropertyNames(acq).length === 0) {
+         // All-in-one solutions, e.g. Stripe.
+         cardobj = psp.cards;
+      }
+      else {
+         // Payment Gateways, e.g. DIBS.
+         var newacq = {};
+
+         // Find cheapest acquirer that support all cards
+         for (i = 0; i < settings.acquirersort.length; i++) {
+
+            var _acq = settings.acquirersort[i];
+            var secondopinion = {};
+
+            if( acq[_acq] ){
+               newacq[_acq] = 1; // replace '1' with the costs.
+               var objlength = Object.getOwnPropertyNames(newacq).length;
+
+               if ( cardsCovered(newacq, settings) ) { break; }
+               else if ((newacq.nets && objlength < 2) || (objlength === 0)) { continue; }
+               else if ( i+1 == settings.acquirersort.length ) { newacq = false; break; }
+               else { delete newacq[_acq]; } // Delete and try with next acquirer
+            }
+         }
+
+         if (psp.features.multiacquirer) {
+         // Challenge newacq ( coming soon! )
+         }
+
+         // Skip PSP if acquirer does not support cards
+         if ( Object.getOwnPropertyNames(newacq).length === 0) { continue psploop; }
+         acq = newacq;
+
+
+         for (var ac in acq) {
+            // Merge acquirer card lists
+            for (var card in acquirers[ac].cards ) {
+
+               // Some cards/methods (e.g. mobilepay) add extra costs.
+               // They will only be included if enabled in settings.cards.
+               if ( cardobj[card] || (!settings.cards[card] && CARDs[card].costfn) ){ continue; }
+
+               if (CARDs[card].costfn){
+                  setup = setup.add(CARDs[card].fee.setup);
+                  recurring = recurring.add(CARDs[card].fee.monthly);
+               }
+               cardobj[card] = 1;
+            }
+
+            var scale = (ac == "nets") ? settings.dankort_scale :  1-settings.dankort_scale;
+
+            setup = setup.add(acquirers[ac].fee_setup);
+            recurring = recurring.add( acquirers[ac].fee_monthly);
+            total = total.add( acquirers[ac].fee.trans.scale(scale));
+         }
+      }
+
+      psp.costs = psp.costfn(settings);
+
+      setup = setup.add(psp.costs.setup);
+      recurring = recurring.add(psp.costs.monthly);
+      total = total.add(psp.costs.trans).add(recurring);
+
+      var cardfrag = document.createDocumentFragment();
+      var wrapper, svg, use;
+
+      for (l in cardobj) {
+         wrapper = document.createElement("p");
+         wrapper.classList.add("card");
+         // wrapper.addEventListener("mouseover", tooltip);
+         // el.addEventListener("click", function(){modifyText("four")}, false);
+         svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+         use = document.createElementNS("http://www.w3.org/2000/svg",'use');
+         use.setAttributeNS("http://www.w3.org/1999/xlink", "xlink:href", CARDs[l].logo);
+         use.setAttribute('x','0');
+         use.setAttribute('y','0');
+         use.setAttribute('height','15');
+         svg.appendChild(use);
+         wrapper.appendChild(svg);
+         cardfrag.appendChild(wrapper);
+      }
+
+      var more = document.createElement("p");
+      var rand = Math.floor(Math.random() * 6) + 1;
+      more.innerHTML = "<a href='#'>"+ rand + "</a>";
+      // cardfrag.appendChild(more);
+
+      var acqfrag = document.createDocumentFragment();
+      for (l in acq) {
+         wrapper = document.createElement("p");
+         wrapper.className = "acquirer";
+         //wrapper.addEventListener("mouseover", tooltip);
+
+         wrapper.innerHTML = '<a target="_blank" href="' + ACQs[l].link + '"><img class="acquirer '+l+'" src="/assets/img/psp/' + ACQs[l].logo + '" alt="' + ACQs[l].name +
+         '" title="' + ACQs[l].name + '" /></a>';
+         acqfrag.appendChild(wrapper);
+      }
+
+      // Sort psp after total.dkk()
+      for (sort = 0; sort < data.length; ++sort) {
+         if (total.dkk() < data[sort]) { break; }
+      }
+      data.splice(sort, 0, total.dkk());
+
+      var row = tbody.insertRow(sort);
+      row.insertCell(-1).innerHTML = '<a target="_blank" class="psp '+ psp.name.substring(0,4).toLowerCase() +'" href=' + psp.link + '><img src="/assets/img/psp/' + psp.logo + '" alt="' + psp.name +
+         '" title="' + psp.name +'" /><p>' + psp.name +'</p></a>';
+      row.insertCell(-1).appendChild(acqfrag);
+      row.insertCell(-1).appendChild(cardfrag);
+      row.insertCell(-1).textContent = setup.print();
+      row.insertCell(-1).textContent = recurring.print();
+      row.insertCell(-1).textContent = total.print();
+
+      var kortgebyr = total.scale(1 / settings.transactions);
+      var kortprocent = kortgebyr.scale( 1/settings.avgvalue.dkk()).dkk()*100;
+
+      row.insertCell(-1).innerHTML = "<p class='kortgebyr'>"+total.scale(1 / settings.transactions).print() + "</p><p class='procent'>≈ " + kortprocent.toFixed(3).replace('.', ',') + " %</p>";
+
+      var infoButton = document.createElement("div");
+      infoButton.classList.add("infobutton");
+      /* construct acq list */
+      infoButton.addEventListener("click", klik(psp, acquirers, acq, settings));
+
+      infoButton.textContent = "Se mere";
+      row.insertCell(-1).appendChild(infoButton);
    }
+   table.replaceChild(tbody, $('tbody'));
+
+   if (action !== "init") { saveurl(); }
+
+   console.log( (performance.now()-stopwatch).toFixed(3) +"ms ::: done building \n ");
+
 }
 
-Object.size = function (obj) {
-   var size = 0,
-      key;
-   for (key in obj) {
-      if (obj.hasOwnProperty(key)) size++;
+//===========================
+//            Modal
+//===========================
+
+function buildInfoModal(psp, acquirers, acqlabels, settings) {
+   var overlay = document.querySelector(".overlay.pspinfo");
+   var content = overlay.getElementsByClassName("content")[0];
+   var frag = document.createDocumentFragment();
+   console.log(acqlabels);
+   content.innerHTML = "";
+   /*var h = document.createElement("h1");
+   frag.appendChild(h).textContent = "Oversigt over " + psp.name;*/
+
+   var psptitle = document.createElement("h3");
+   frag.appendChild(psptitle).textContent = "Omkostninger til payment gateway:";
+
+   var psph = document.createElement("h4");
+   var pspBlock = document.createElement("div");
+   var pspSetup = document.createElement("div");
+   var pspMonthly = document.createElement("div");
+   var pspTrans = document.createElement("div");
+
+   pspBlock.classList.add("costblock");
+
+   pspBlock.appendChild(psph).textContent = psp.name + ":";
+   pspBlock.appendChild(pspSetup).textContent = "Oprettelse: " + psp.costs.setup.print();
+   pspBlock.appendChild(pspMonthly).textContent = "Abonnement per måned: " + psp.costs.monthly.print();
+   pspBlock.appendChild(pspTrans).textContent = "Transaktionsgebyrer: " + psp.costs.trans.print();
+   frag.appendChild(pspBlock);
+
+   if (Object.keys(acqlabels).length > 0) {
+      frag.appendChild(document.createElement("hr"));
+      var acqtitle = document.createElement("h3");
+      frag.appendChild(acqtitle).textContent = "Indløseromkostninger:";
+      if (acqlabels.nets && Object.keys(acqlabels).length > 1) {
+         var acqdescription = document.createElement("div");
+         frag.appendChild(acqdescription).textContent = "Det antages jævnfør FDIH's statistikker at Nets modtager 77% af transaktionerne (fra visa/dankort samt rene dankort), mens den sekundære indløser modtager 33%.";
+      }
    }
-   return size;
+   for (var label in acqlabels) {
+      var acq = acquirers[label];
+      var acqblock = document.createElement("div");
+      var acqh = document.createElement("h4");
+
+      var acqSetup = document.createElement("div");
+      var acqMonthly = document.createElement("div");
+      var acqTrans = document.createElement("div");
+
+      acqblock.classList.add("costblock");
+
+      acqblock.appendChild(acqh).textContent = acq.name + ":";
+      acqblock.appendChild(acqSetup).textContent = "Oprettelse: " + acq.fee_setup.print();
+      acqblock.appendChild(acqMonthly).textContent = "Abonnement per måned: " + acq.fee_monthly.print();
+      var scale = (label === "nets") ? settings.dankort_scale : 1 - settings.dankort_scale;
+      acqblock.appendChild(acqTrans).textContent = "Transaktionsgebyrer: " + acq.fee.trans.scale(scale).print();
+      frag.appendChild(acqblock);
+   }
+
+   if (settings.cards.mobilepay) {
+      var mpayblock = document.createElement("div");
+      var mpayh = document.createElement("h4");
+      var mpaySetup = document.createElement("div");
+      var mpayMonthly = document.createElement("div");
+      var mpayTrans = document.createElement("div");
+      mpayblock.classList.add("costblock");
+      mpayblock.appendChild(mpayh).textContent = "Extra til Mobilepay oven i indløseromkostninger:";
+      mpayblock.appendChild(mpaySetup).textContent = "Oprettelse: " + settings.cards.mobilepay.fee.setup.print();
+      mpayblock.appendChild(mpayMonthly).textContent = "Abonnement per måned: " + settings.cards.mobilepay.fee.monthly.print();
+      mpayblock.appendChild(mpayTrans).textContent = "Transaktionsgebyrer: 1kr ekstra pr. mobilepay transaktion";
+      frag.appendChild(mpayblock);
+   }
+
+   content.appendChild(frag);
+   overlay.classList.add("active");
+}
+
+document.onkeydown = function(e) {
+   e = e || window.event;
+   if ((e.keyCode || e.which) === 27) {
+      var containers = document.querySelectorAll('.overlay.active');
+      for (var i in containers) {
+         if (!isNaN(i)) {
+            containers[i].classList.remove('active');
+         }
+      }
+   }
 };
+
+
 
 //===========================
 //            URL
@@ -1703,226 +760,158 @@ Object.size = function (obj) {
 
 var base64_chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz+/";
 
-function base64_encode(n) {
-   if (n < 0) {
-      return "";
-   }
-
-   var str = "",
-      curr_n = n;
-   do {
-      str = base64_chars[curr_n % 64] + str;
-      curr_n = Math.floor(curr_n / 64);
-   } while (curr_n !== 0);
-
-   return str;
+function Base64Array(initsize) {
+    this.bitpos = 0; // from 0 - 5
+    this.array = [];
+    this.pos = 0;
 }
 
-var MAX_INT32 = 0x7FFFFFFF;
+Base64Array.prototype.pushbit = function(bit) {
+    if (this.array.length === 0) {this.array.push(0);}
+    if (this.bitpos > 5) {
+        this.bitpos = 0;
+        this.array.push(0);
+    }
+    this.array[this.array.length - 1] += bit << this.bitpos;
+    this.bitpos++;
+};
 
-function init_dirty_bits() {
-   var dirty_bits_count = 0;
-   for (var i in opts) {
-      if (opts[i].dirty_bits && !opts[i].inactive) {
-         dirty_bits_count += opts[i].dirty_bits;
-      }
-   }
-   opts.dirty_bits.bits = dirty_bits_count;
+Base64Array.prototype.getbit = function() {
+    if (this.bitpos > 5) {
+        this.bitpos = 0;
+        this.pos++;
+    }
+    var bitval = (this.array[this.pos] & (1 << this.bitpos)) >>> this.bitpos;
+    this.bitpos++;
+    return bitval;
+};
+
+Base64Array.prototype.pushbits = function(bitval, nbits) {
+    for(var i = 0; i < nbits; i++) {
+        this.pushbit((bitval & (1 << i)) >>> i);
+    }
+};
+
+Base64Array.prototype.encode = function() {
+    var encstr = "";
+    for (var i = 0; i < this.array.length; i++) {
+        console.log("arr[" + i + "] = " + this.array[i]);
+        encstr += base64_chars[this.array[i]];
+    }
+    return encstr;
+};
+
+Base64Array.prototype.pushbase64char = function(b64char) {
+    var index = base64_chars.indexOf(b64char);
+    if (index < 0) {
+        console.log("Unexpected query character " + b64char);
+        return -1;
+    }
+    this.array.push(index);
+    return 0;
+};
+
+Base64Array.prototype.getbits = function(nbits) {
+    var val = 0;
+    for (var i = 0; i < nbits; i++) {
+        val += this.getbit() << i;
+    }
+    return val;
+};
+
+
+/* Save the url to the following structure URL = kortgebyr.dk?{BITS}{ARGUMENT STRING}*/
+function saveurl() {
+    var argstr = ""; // The optional arguments string which follows the base64 enc. bits
+    var nbits; // the number of bits for the current option
+    var optbits; // The bits for the current option
+    var bitbuf = new Base64Array(); // The buffer used for containing bits until they are flushed
+    var o;
+
+    /* Loop through the options and construct the url */
+    for (var key in opts) {
+        o = opts[key];
+
+        /* Depending on whether dirty bits are used or not, react accordingly */
+        if (o.dirty_bits) {
+            nbits = o.dirty_bits;
+            optbits = o.get_dirty_bits("url");
+            var ret = o.get();
+            /* Create the argument string part if dirty bit is set */
+            if (optbits) {
+                if (ret instanceof Currency) {
+                    argstr += ";" + ret.string();
+                } else {
+                    argstr += ";" + ret;
+                }
+            }
+
+        } else if (o.bits) {
+            nbits = typeof(o.bits) === "function" ? o.bits() : o.bits;
+            optbits = o.get("url");
+        } else {
+            console.log("opt " + key + " neither has a bits field or a dirty_bits field");
+            return;
+        }
+        bitbuf.pushbits(optbits, nbits);
+    }
+
+
+    history.replaceState({
+       foo: "bar"
+    }, "", "?" + bitbuf.encode() + argstr);
 }
 
-function save_url() {
-   var url = "",
-      first_bit = 0,
-      /* from left */
-      sum = 0,
-      last_index, dirty_bits_value = 0,
-      dirty_bits_position = 0;
-   for (var i in opts) {
-      if (!opts[i].inactive && !opts[i].dirty_bits) {
-         last_index = i;
-      }
-   }
-   dirty_bits_value = opts.dirty_bits.get("url");
+function loadurl() {
+    var querystring = location.search.replace("?", "");
+    if (!querystring) { return; }
 
-   for (i in opts) {
-      var obj = opts[i],
-         dirty_bits_current = 0;
-      if (obj.dirty_bits) {
-         dirty_bits_current = get_bit_range(dirty_bits_value, dirty_bits_position, dirty_bits_position + obj.dirty_bits - 1, opts["dirty_bits"].bits);
-         dirty_bits_position += obj.dirty_bits;
-      }
-      if (obj.inactive === true || (obj.dirty_bits && dirty_bits_current === 0)) {
-         continue;
-      }
+    var encbits = ""; // The base64 encoded bits
+    var args; // The optional arguments string which follows the base64 enc. bits
+    var nbits; // the number of bits for the current option
+    var bitval;
+    var bitbuf = new Base64Array(); // The buffer used for containing bits until they are flushed
+    var o;
 
-      if (obj.type === "bits") {
-         var remainder = obj.get("url"),
-            remainder_bits = obj.bits;
-         //console.log(i + " : " + remainder);
-         do {
-            var last_bit = Math.min(first_bit + remainder_bits - 1, 5);
-            sum += remainder >>> Math.max(remainder_bits - (1 + last_bit - first_bit), 0) << (5 - last_bit);
-            remainder_bits -= 1 + last_bit - first_bit;
-            remainder = remainder & (MAX_INT32 >>> (31 - remainder_bits));
-            if (last_bit === 5 || i === last_index) {
-               url += base64_chars.charAt(sum);
-               first_bit = 0;
-               sum = 0;
-            } else {
-               first_bit += last_bit - first_bit + 1;
+    /* Check if any additional args after the bits and
+       create the arg array if that is the case */
+    var nb64chars = querystring.indexOf(";");
+    if (nb64chars < 0) {
+        nb64chars = querystring.length;
+    } else {
+        args = querystring.slice(nb64chars + 1).split(";");
+    }
+
+    /* Load the base64 representation of the bits into a base64array type */
+    for (var i = 0; i < nb64chars; i++) {
+        if (bitbuf.pushbase64char(querystring[i]) !== 0) {
+            console.log("error parsing bits");
+            return -1;
+        }
+    }
+
+    /* Loop through the opts set the fields with values loaded from the url */
+    for (var key in opts) {
+        o = opts[key];
+        /* Check if opt has dirty bits, if so load arg */
+        if (o.dirty_bits) {
+            nbits = o.dirty_bits;
+            bitval = bitbuf.getbits(nbits);
+            if (bitval > 0) {
+                o.set(args[0]);
+                args.shift();
             }
-         } while (remainder_bits > 0);
-      } else {
-         if (sum > 0) {
-            url += base64_chars.charAt(sum);
-            first_bit = 0;
-            sum = 0;
-         }
-
-         if (obj.type === "string") {
-
-            url += ";" + obj.get("url");
-         } else if (obj.type === "currency") {
-
-            var amount = obj.get("url").amounts;
-            for (var cur in amount) {
-               url += ";" + amount[cur] + cur;
-            }
-         }
-      }
-
-      //console.log(i+" : "+sum);
-   }
-
-   history.replaceState({
-      foo: "bar"
-   }, "", "?" + url);
+        /* Otherwise just load the bits directly */
+        } else if (o.bits){
+            nbits = typeof(o.bits) === "function" ? o.bits() : o.bits;
+            bitval = bitbuf.getbits(nbits);
+            o.set(bitval);
+        } else {
+            console.log("opt " + key + " neither has a bits field or a dirty_bits field");
+            return;
+        }
+        /* Create the argument string part if dirty bit is set */
+    }
 }
 
-function get_bit_range(n, from, to, length) {
-   // from the left --- only up to 6 bits
-   return (n & (MAX_INT32 >>> (31 - length + from))) >>> length - 1 - to;
-}
-
-function load_url(url_query) {
-   url_query = url_query.replace("?", "");
-   if (url_query === "") {
-      return;
-   }
-
-   var current_char_num = 0,
-      first_bit = 0,
-      dirty_bits_value = 0,
-      dirty_bits_position = 0,
-      dirty_bits_current; // 0 char is ?
-   for (var i in opts) {
-      var obj = opts[i],
-         sum = 0;
-      if (obj.inactive === true) {
-         continue;
-      }
-      if (obj.dirty_bits) {
-         dirty_bits_current = get_bit_range(dirty_bits_value, dirty_bits_position, dirty_bits_position + obj.dirty_bits - 1, opts["dirty_bits"].bits);
-         dirty_bits_position += obj.dirty_bits;
-         if (dirty_bits_current === 0) {
-            continue;
-         }
-      }
-      if (obj.type === "bits") {
-         var remaining_bits = obj.bits;
-         while (1) {
-            if (current_char_num > url_query.length - 1) {
-               return; // error url_query too short
-            }
-            var current_char = url_query.charAt(current_char_num);
-            if (current_char === ";") {
-               break;
-            }
-            var n = base64_chars.indexOf(current_char);
-            if (n === -1) {
-               return; // error invalid char
-            }
-            var last_bit = first_bit + remaining_bits - 1;
-            if (last_bit > 5) {
-               last_bit = 5;
-            }
-            remaining_bits -= 1 + last_bit - first_bit;
-            sum += get_bit_range(n, first_bit, last_bit, 6) << remaining_bits;
-            if (remaining_bits > 0) {
-               first_bit = 0;
-               current_char_num++;
-            } else {
-               first_bit = last_bit + 1;
-               if (first_bit > 5) {
-                  first_bit = 0;
-                  current_char_num++;
-               }
-               break;
-            }
-         }
-         obj.set(sum);
-         if (i === "dirty_bits") {
-            dirty_bits_value = sum;
-         }
-      } else {
-         if (first_bit > 0) {
-            first_bit = 0;
-            current_char_num++;
-         }
-         if (url_query.charAt(current_char_num) === ";") {
-            current_char_num++;
-         }
-         var next_separator_index = url_query.indexOf(";", current_char_num);
-         if (next_separator_index === -1) {
-            next_separator_index = url_query.length;
-         }
-         var str = url_query.substring(current_char_num, next_separator_index);
-         current_char_num += str.length;
-
-         if (obj.type === "string") {
-            if (i === "acquirer_opts") {
-               opts[i].set(str, dirty_bits_value);
-            } else {
-               opts[i].set(str);
-            }
-         } else if (obj.type === "currency") {
-            opts[i].set(_getCurrency(str));
-         }
-      }
-
-   }
-
-   /*
-     On page refresh, check if acquirer != automatisk. If this is the case
-     then hide .acquirer_description, show .acquirer_options and reset
-     fields to default values.
-   */
-
-   setAcquirerPanel();
-
-}
-
-function setAcquirerPanel() {
-
-   var selected_acquirer = opts.acquirer.get();
-   if (selected_acquirer !== "auto") {
-
-      C('acquirer_description')[0].style.display = 'none';
-      C('acquirer_options')[0].style.display = 'block';
-
-      sopts.acquirer_fixed.set(acqs[selected_acquirer].fee_fixed);
-      sopts.acquirer_variable.set(acqs[selected_acquirer].fee_variable);
-      sopts.acquirer_setup.set(acqs[selected_acquirer].fee_setup);
-      sopts.acquirer_monthly.set(acqs[selected_acquirer].fee_monthly);
-
-      // return getCurrency('acquirer_fixed');
-   } else {
-      C('acquirer_description')[0].style.display = 'block';
-      C('acquirer_options')[0].style.display = 'none';
-   }
-
-}
-
-
-
-
+build('init');
